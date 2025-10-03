@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Journal - Expenses</title>
+</head>
+<body>
+    <h1>My Monthly Expenses</h1>
+    <h3>Budget: $1000</h3>
+    <h3>Total Spent: ${{ total_spent }}</h3>
+    <h3>Remaining Budget: ${{ remaining_budget }}</h3>
+
+    <form action="{{ url_for('add_expense') }}" method="post">
+        <input type="text" name="description" placeholder="Description" required>
+        <input type="number" step="0.01" name="amount" placeholder="Amount" required>
+        <button type="submit">Add Expense</button>
+    </form>
+
+    <h2>Expenses This Month:</h2>
+    <ul>
+        {% for expense in expenses %}
+            <li>{{ expense.date }} - {{ expense.description }}: ${{ expense.amount }}</li>
+        {% else %}
+            <li>No expenses yet!</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
