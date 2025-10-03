@@ -84,6 +84,39 @@ def add_show():
     db.session.commit()
     return redirect(url_for('favorites'))
 
+# Delete expense
+@app.route('/delete_expense/<int:id>', methods=['POST'])
+def delete_expense(id):
+    expense = Expense.query.get_or_404(id)
+    db.session.delete(expense)
+    db.session.commit()
+    return redirect(url_for('home'))
+
+# Delete favorite place
+@app.route('/delete_place/<int:id>', methods=['POST'])
+def delete_place(id):
+    place = FavoritePlace.query.get_or_404(id)
+    db.session.delete(place)
+    db.session.commit()
+    return redirect(url_for('favorites'))
+
+# Delete favorite food
+@app.route('/delete_food/<int:id>', methods=['POST'])
+def delete_food(id):
+    food = FavoriteFood.query.get_or_404(id)
+    db.session.delete(food)
+    db.session.commit()
+    return redirect(url_for('favorites'))
+
+# Delete favorite show
+@app.route('/delete_show/<int:id>', methods=['POST'])
+def delete_show(id):
+    show = FavoriteShow.query.get_or_404(id)
+    db.session.delete(show)
+    db.session.commit()
+    return redirect(url_for('favorites'))
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Creates database tables if they don't exist
