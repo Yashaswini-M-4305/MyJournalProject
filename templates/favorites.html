@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>My Journal - Favorites</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <h1>My Favorite Places, Foods, and Shows</h1>
@@ -13,7 +14,12 @@
     </form>
     <ul>
         {% for place in places %}
-            <li>{{ place.name }}</li>
+            <li>
+                {{ place.name }}
+                <form action="{{ url_for('delete_place', id=place.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
         {% else %}
             <li>No favorite places yet!</li>
         {% endfor %}
@@ -26,7 +32,12 @@
     </form>
     <ul>
         {% for food in foods %}
-            <li>{{ food.name }}</li>
+            <li>
+                {{ food.name }}
+                <form action="{{ url_for('delete_food', id=food.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
         {% else %}
             <li>No favorite foods yet!</li>
         {% endfor %}
@@ -39,7 +50,12 @@
     </form>
     <ul>
         {% for show in shows %}
-            <li>{{ show.name }}</li>
+            <li>
+                {{ show.name }}
+                <form action="{{ url_for('delete_show', id=show.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
         {% else %}
             <li>No favorite shows yet!</li>
         {% endfor %}
