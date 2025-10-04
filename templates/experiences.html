@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Journal - Experiences</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>My Life Experiences</h1>
+
+    <h2>Visited Places</h2>
+    <form action="{{ url_for('add_visited_place') }}" method="post">
+        <input type="text" name="name" placeholder="Add a place you visited" required>
+        <button type="submit">Add Place</button>
+    </form>
+    <ul>
+        {% for place in places %}
+            <li>
+                {{ place.name }}
+                <form action="{{ url_for('delete_visited_place', id=place.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% else %}
+            <li>No visited places yet!</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Food Tried</h2>
+    <form action="{{ url_for('add_food_tried') }}" method="post">
+        <input type="text" name="name" placeholder="Add food you tried" required>
+        <button type="submit">Add Food</button>
+    </form>
+    <ul>
+        {% for food in foods %}
+            <li>
+                {{ food.name }}
+                <form action="{{ url_for('delete_food_tried', id=food.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% else %}
+            <li>No food tried yet!</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Watched Shows</h2>
+    <form action="{{ url_for('add_watched_show') }}" method="post">
+        <input type="text" name="name" placeholder="Add a show you watched" required>
+        <button type="submit">Add Show</button>
+    </form>
+    <ul>
+        {% for show in shows %}
+            <li>
+                {{ show.name }}
+                <form action="{{ url_for('delete_watched_show', id=show.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% else %}
+            <li>No watched shows yet!</li>
+        {% endfor %}
+    </ul>
+    <p><a href="{{ url_for('home') }}">Back to Expenses</a></p>
+</body>
+</html>
