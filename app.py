@@ -6,48 +6,44 @@ import datetime
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///journal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your_secret_key'  # Needed for login sessions
+app.config['SECRET_KEY'] = 'your_secret_key'
 db = SQLAlchemy(app)
 
-# User model
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(80), nullable=False)
 
-# Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'   # redirect to login if not logged in
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Model for an expense
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(100))
     amount = db.Column(db.Float)
     date = db.Column(db.Date)
 
-class FavoritePlace(db.Model):
+class VisitedPlace(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
 
-class FavoriteFood(db.Model):
+class FoodTried(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
 
-class FavoriteShow(db.Model):
+class WatchedShow(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-
 
 @app.route('/')
 @login_required
 def home():
-    budget = 1000  # Fixed monthly budget (you can change)
+    budget = 1000
     today = datetime.date.today()
     monthly_expenses = Expense.query.filter(
         Expense.date >= datetime.date(today.year, today.month, 1)).all()
@@ -56,7 +52,7 @@ def home():
     return render_template('home.html', expenses=monthly_expenses,
                            total_spent=total_spent, remaining_budget=remaining_budget)
 
-@app.route('/add', methods=['POST'])
+@app.route('/add_expense', methods=['POST'])
 @login_required
 def add_expense():
     desc = request.form.get('description')
@@ -67,40 +63,40 @@ def add_expense():
     db.session.commit()
     return redirect(url_for('home'))
 
-@app.route('/favorites')
+@app.route('/experiences')
 @login_required
-def favorites():
-    places = FavoritePlace.query.all()
-    foods = FavoriteFood.query.all()
-    shows = FavoriteShow.query.all()
-    return render_template('favorites.html', places=places, foods=foods, shows=shows)
+def experiences():
+    places = VisitedPlace.query.all()
+    foods = FoodTried.query.all()
+    shows = WatchedShow.query.all()
+    return render_template('experiences.html', places=places, foods=foods, shows=shows)
 
-@app.route('/add_place', methods=['POST'])
+@app.route('/add_visited_place', methods=['POST'])
 @login_required
-def add_place():
+def add_visited_place():
     name = request.form.get('name')
-    new_place = FavoritePlace(name=name)
+    new_place = VisitedPlace(name=name)
     db.session.add(new_place)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
-@app.route('/add_food', methods=['POST'])
+@app.route('/add_food_tried', methods=['POST'])
 @login_required
-def add_food():
+def add_food_tried():
     name = request.form.get('name')
-    new_food = FavoriteFood(name=name)
+    new_food = FoodTried(name=name)
     db.session.add(new_food)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
-@app.route('/add_show', methods=['POST'])
+@app.route('/add_watched_show', methods=['POST'])
 @login_required
-def add_show():
+def add_watched_show():
     name = request.form.get('name')
-    new_show = FavoriteShow(name=name)
+    new_show = WatchedShow(name=name)
     db.session.add(new_show)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
 @app.route('/delete_expense/<int:id>', methods=['POST'])
 @login_required
@@ -110,31 +106,30 @@ def delete_expense(id):
     db.session.commit()
     return redirect(url_for('home'))
 
-@app.route('/delete_place/<int:id>', methods=['POST'])
+@app.route('/delete_visited_place/<int:id>', methods=['POST'])
 @login_required
-def delete_place(id):
-    place = FavoritePlace.query.get_or_404(id)
+def delete_visited_place(id):
+    place = VisitedPlace.query.get_or_404(id)
     db.session.delete(place)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
-@app.route('/delete_food/<int:id>', methods=['POST'])
+@app.route('/delete_food_tried/<int:id>', methods=['POST'])
 @login_required
-def delete_food(id):
-    food = FavoriteFood.query.get_or_404(id)
+def delete_food_tried(id):
+    food = FoodTried.query.get_or_404(id)
     db.session.delete(food)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
-@app.route('/delete_show/<int:id>', methods=['POST'])
+@app.route('/delete_watched_show/<int:id>', methods=['POST'])
 @login_required
-def delete_show(id):
-    show = FavoriteShow.query.get_or_404(id)
+def delete_watched_show(id):
+    show = WatchedShow.query.get_or_404(id)
     db.session.delete(show)
     db.session.commit()
-    return redirect(url_for('favorites'))
+    return redirect(url_for('experiences'))
 
-# Registration route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -150,7 +145,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -166,7 +160,6 @@ def login():
             return redirect(url_for('login'))
     return render_template('login.html')
 
-# Logout route
 @app.route('/logout')
 @login_required
 def logout():
@@ -176,5 +169,5 @@ def logout():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Creates database tables if they don't exist
+        db.create_all()
     app.run(debug=True)
