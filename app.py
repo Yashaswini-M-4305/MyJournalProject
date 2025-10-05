@@ -214,6 +214,21 @@ def logout():
 def profile():
     return render_template('profile.html', user=current_user)
 
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        old_password = request.form['old_password']
+        new_password = request.form['new_password']
+        if old_password != current_user.password:
+            flash('Old password is incorrect.')
+            return redirect(url_for('change_password'))
+        current_user.password = new_password
+        db.session.commit()
+        flash('Password updated successfully!')
+        return redirect(url_for('profile'))
+    return render_template('change_password.html')
+
 
 
 if __name__ == '__main__':
