@@ -209,6 +209,12 @@ def logout():
     flash('Logged out!')
     return redirect(url_for('login'))
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
+
 
 if __name__ == '__main__':
     with app.app_context():
