@@ -75,7 +75,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        session.pop('_flashes', None)  # Clear old flashes
+        session.pop('_flashes', None)
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username, password=password).first()
@@ -92,22 +92,28 @@ def login():
 @login_required
 def logout():
     logout_user()
-    session.pop('_flashes', None)  # Clear old flashes
+    session.pop('_flashes', None)
     flash('Logged out!')
     return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def home():
-    budget = 1000
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
     today = datetime.date.today()
-    monthly_expenses = Expense.query.filter(
+    pagination = Expense.query.filter(
         Expense.user_id == current_user.id,
         Expense.date >= datetime.date(today.year, today.month, 1)
-    ).all()
-    total_spent = sum(e.amount for e in monthly_expenses)
+    ).paginate(page=page, per_page=per_page)
+    total_spent = sum(e.amount for e in pagination.items)
+    budget = 1000
     remaining_budget = budget - total_spent
-    return render_template('home.html', expenses=monthly_expenses, total_spent=total_spent, remaining_budget=remaining_budget)
+    return render_template('home.html',
+                           expenses=pagination.items,
+                           pagination=pagination,
+                           total_spent=total_spent,
+                           remaining_budget=remaining_budget)
 
 @app.route('/add_expense', methods=['POST'])
 @login_required
@@ -134,10 +140,18 @@ def delete_expense(id):
 @app.route('/experiences')
 @login_required
 def experiences():
-    places = VisitedPlace.query.filter_by(user_id=current_user.id).all()
-    foods = FoodTried.query.filter_by(user_id=current_user.id).all()
-    shows = WatchedShow.query.filter_by(user_id=current_user.id).all()
-    return render_template('experiences.html', places=places, foods=foods, shows=shows)
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+    places_pagination = VisitedPlace.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+    foods_pagination = FoodTried.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+    shows_pagination = WatchedShow.query.filter_by(user_id=current_user.id).paginate(page=page, per_page=per_page)
+    return render_template('experiences.html',
+                           places=places_pagination.items,
+                           foods=foods_pagination.items,
+                           shows=shows_pagination.items,
+                           places_pagination=places_pagination,
+                           foods_pagination=foods_pagination,
+                           shows_pagination=shows_pagination)
 
 @app.route('/add_visited_place', methods=['POST'])
 @login_required
