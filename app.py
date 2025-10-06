@@ -229,6 +229,23 @@ def change_password():
         return redirect(url_for('profile'))
     return render_template('change_password.html')
 
+@app.route('/delete_account', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    if request.method == 'POST':
+        # remove user-owned rows first (simple cascade by hand)
+        Expense.query.filter_by(user_id=current_user.id).delete()
+        VisitedPlace.query.filter_by(user_id=current_user.id).delete()
+        FoodTried.query.filter_by(user_id=current_user.id).delete()
+        WatchedShow.query.filter_by(user_id=current_user.id).delete()
+        uid = current_user.id
+        logout_user()
+        user = User.query.get(uid)
+        db.session.delete(user)
+        db.session.commit()
+        flash('Account deleted')
+        return redirect(url_for('login'))
+    return render_template('confirm_delete_account.html')
 
 
 if __name__ == '__main__':
