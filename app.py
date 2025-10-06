@@ -247,6 +247,56 @@ def delete_account():
         return redirect(url_for('login'))
     return render_template('confirm_delete_account.html')
 
+import os
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = os.path.join('static', 'avatars')
+ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
+
+@app.route('/upload_avatar', methods=['GET', 'POST'])
+@login_required
+def upload_avatar():
+    if request.method == 'POST':
+        file = request.files.get('avatar')
+        if not file or file.filename == '':
+            flash('Please choose a file')
+            return redirect(url_for('upload_avatar'))
+        if not allowed_file(file.filename):
+            flash('Invalid file type')
+            return redirect(url_for('upload_avatar'))
+        fn = secure_filename(f"user_{current_user.id}." + file.filename.rsplit('.',1)[1].lower())
+        path = os.path.join(app.config['UPLOAD_FOLDER'], fn)
+        file.save(path)
+        # store path on user (optional: add column avatar_path)
+        # If you don't have the column yet, skip saving to DB and just compute URL in template.
+        flash('Avatar uploaded')
+        return redirect(url_for('profile'))
+    return render_template('upload_avatar.html')
+
+@app.route('/edit_username', methods=['GET', 'POST'])
+@login_required
+def edit_username():
+    if request.method == 'POST':
+        new_username = request.form['username'].strip()
+        if not new_username:
+            flash('Username cannot be empty')
+            return redirect(url_for('edit_username'))
+        # prevent duplicates
+        existing = User.query.filter_by(username=new_username).first()
+        if existing and existing.id != current_user.id:
+            flash('Username already taken')
+            return redirect(url_for('edit_username'))
+        current_user.username = new_username
+        db.session.commit()
+        flash('Username updated')
+        return redirect(url_for('profile'))
+    return render_template('edit_username.html')
+
 
 if __name__ == '__main__':
     with app.app_context():
