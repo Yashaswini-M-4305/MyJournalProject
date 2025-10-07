@@ -67,7 +67,7 @@
       const chartLabels = {{ chart_labels | tojson | safe }};
       const chartData = {{ chart_data | tojson | safe }};
 
-      const spendingChart = new Chart(ctx, {
+      new Chart(ctx, {
         type: 'line',
         data: {
           labels: chartLabels,
