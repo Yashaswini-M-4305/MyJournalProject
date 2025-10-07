@@ -27,9 +27,7 @@
       <ul>
         {% for expense in expenses %}
           <li>
-            {{ expense.date.strftime('%Y-%m-%d') }} -
-            {{ expense.description }}: ${{ '%.2f'|format(expense.amount) }}
-
+            {{ expense.date.strftime('%Y-%m-%d') }} - {{ expense.description }}: ${{ '%.2f'|format(expense.amount) }}
             <form action="{{ url_for('delete_expense', id=expense.id) }}" method="post" style="display:inline;">
                 <button type="submit" onclick="return confirm('Delete this expense?')">Delete</button>
             </form>
@@ -44,9 +42,7 @@
         {% if pagination.has_prev %}
             <a href="{{ url_for('home', page=pagination.prev_num) }}">Previous</a>
         {% endif %}
-
         <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
-
         {% if pagination.has_next %}
             <a href="{{ url_for('home', page=pagination.next_num) }}">Next</a>
         {% endif %}

@@ -20,7 +20,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 db = SQLAlchemy(app)
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -82,13 +81,23 @@ def login():
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Logged in successfully!')
-            return redirect(url_for('home'))
-        else:
-            flash('Wrong username or password!')
-            return redirect(url_for('login'))
+        if user:
+            # Migration: support old (plaintext) and new (hashed) passwords
+            if user.password.startswith('pbkdf2:'):
+                if check_password_hash(user.password, password):
+                    login_user(user)
+                    flash('Logged in successfully!')
+                    return redirect(url_for('home'))
+            else:
+                # Migrate to hash
+                if user.password == password:
+                    user.password = generate_password_hash(password)
+                    db.session.commit()
+                    login_user(user)
+                    flash('Logged in successfully!')
+                    return redirect(url_for('home'))
+        flash('Wrong username or password!')
+        return redirect(url_for('login'))
     return render_template('login.html')
 
 @app.route('/logout')
@@ -110,7 +119,6 @@ def home():
         next_month_first_day = datetime.date(today.year + 1, 1, 1)
     else:
         next_month_first_day = datetime.date(today.year, today.month + 1, 1)
-
     pagination = Expense.query.filter(
         Expense.user_id == current_user.id,
         Expense.date >= first_day,
@@ -130,17 +138,23 @@ def home():
     sorted_dates = sorted(daily_spending.keys())
     amounts = [daily_spending[date] for date in sorted_dates]
 
+    # Always pass lists, never None
+    chart_labels = sorted_dates if sorted_dates else []
+    chart_data = amounts if amounts else []
+
     total_spent = sum(expense.amount for expense in pagination.items)
     budget = 1000
     remaining_budget = budget - total_spent
 
-    return render_template('home.html',
-                           expenses=pagination.items,
-                           pagination=pagination,
-                           total_spent=total_spent,
-                           remaining_budget=remaining_budget,
-                           chart_labels=sorted_dates,
-                           chart_data=amounts)
+    return render_template(
+        'home.html',
+        expenses=pagination.items,
+        pagination=pagination,
+        total_spent=total_spent,
+        remaining_budget=remaining_budget,
+        chart_labels=chart_labels,
+        chart_data=chart_data
+    )
 
 @app.route('/add_expense', methods=['POST'])
 @login_required
