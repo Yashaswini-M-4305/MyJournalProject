@@ -64,8 +64,8 @@
     <script>
       const ctx = document.getElementById('spendingChart').getContext('2d');
 
-      const chartLabels = {{ chart_labels | tojson }};
-      const chartData = {{ chart_data | tojson }};
+      const chartLabels = {{ chart_labels | tojson | safe }};
+      const chartData = {{ chart_data | tojson | safe }};
 
       const spendingChart = new Chart(ctx, {
         type: 'line',
@@ -82,8 +82,19 @@
         },
         options: {
           scales: {
-            x: { title: { display: true, text: 'Date' }},
-            y: { title: { display: true, text: 'Amount ($)' }, beginAtZero: true }
+            x: {
+              title: {
+                display: true,
+                text: 'Date'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Amount ($)'
+              },
+              beginAtZero: true
+            }
           }
         }
       });
