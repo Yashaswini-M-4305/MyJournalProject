@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 import os
 from io import StringIO
 import csv
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///journal.db'
@@ -31,7 +30,7 @@ def allowed_file(filename):
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(128), nullable=False)
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -75,7 +74,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -91,7 +89,6 @@ def login():
             flash('Wrong username or password!')
             return redirect(url_for('login'))
     return render_template('login.html')
-
 
 @app.route('/logout')
 @login_required
@@ -255,7 +252,6 @@ def change_password():
         flash('Password updated successfully!')
         return redirect(url_for('profile'))
     return render_template('change_password.html')
-
 
 @app.route('/upload_avatar', methods=['GET', 'POST'])
 @login_required
