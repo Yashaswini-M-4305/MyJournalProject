@@ -40,7 +40,6 @@
       <p>No expenses recorded this month.</p>
     {% endif %}
 
-    <!-- Pagination controls -->
     <div>
         {% if pagination.has_prev %}
             <a href="{{ url_for('home', page=pagination.prev_num) }}">Previous</a>
@@ -56,38 +55,38 @@
     <p>Total spent this month: ${{ '%.2f'|format(total_spent) }}</p>
     <p>Remaining budget: ${{ '%.2f'|format(remaining_budget) }}</p>
 
+    <h2>Spending trends this month</h2>
+    <canvas id="spendingChart" width="600" height="300"></canvas>
+
     <p><a href="{{ url_for('experiences') }}">My Experiences</a> | <a href="{{ url_for('profile') }}">Profile</a> | <a href="{{ url_for('logout') }}">Log out</a></p>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const ctx = document.getElementById('spendingChart').getContext('2d');
 
-<canvas id="spendingChart" width="600" height="300"></canvas>
+      const chartLabels = {{ chart_labels | tojson }};
+      const chartData = {{ chart_data | tojson }};
 
-<script>
-  const ctx = document.getElementById('spendingChart').getContext('2d');
-
-  const chartLabels = {{ chart_labels | tojson }};
-  const chartData = {{ chart_data | tojson }};
-
-  const spendingChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: chartLabels,
-      datasets: [{
-        label: 'Daily Spending',
-        backgroundColor: 'rgba(54, 162, 235, 0.4)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        fill: true,
-        data: chartData,
-        tension: 0.1
-      }]
-    },
-    options: {
-      scales: {
-        x: { title: { display: true, text: 'Date' }},
-        y: { title: { display: true, text: 'Amount ($)' }, beginAtZero: true }
-      }
-    }
-  });
-</script>
-
+      const spendingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            label: 'Daily Spending',
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            fill: true,
+            data: chartData,
+            tension: 0.1
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'Date' }},
+            y: { title: { display: true, text: 'Amount ($)' }, beginAtZero: true }
+          }
+        }
+      });
+    </script>
 </body>
 </html>
