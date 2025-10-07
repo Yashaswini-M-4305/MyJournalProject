@@ -7,6 +7,7 @@ import os
 from io import StringIO
 import csv
 from werkzeug.utils import secure_filename
+from collections import defaultdict
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///journal.db'
@@ -104,18 +105,42 @@ def home():
     page = request.args.get('page', 1, type=int)
     per_page = 5
     today = datetime.date.today()
+    first_day = datetime.date(today.year, today.month, 1)
+    if today.month == 12:
+        next_month_first_day = datetime.date(today.year + 1, 1, 1)
+    else:
+        next_month_first_day = datetime.date(today.year, today.month + 1, 1)
+
     pagination = Expense.query.filter(
         Expense.user_id == current_user.id,
-        Expense.date >= datetime.date(today.year, today.month, 1)
+        Expense.date >= first_day,
+        Expense.date < next_month_first_day
     ).paginate(page=page, per_page=per_page)
-    total_spent = sum(e.amount for e in pagination.items)
+
+    daily_spending = defaultdict(float)
+    expenses_for_chart = Expense.query.filter(
+        Expense.user_id == current_user.id,
+        Expense.date >= first_day,
+        Expense.date < next_month_first_day
+    ).all()
+    for expense in expenses_for_chart:
+        day_str = expense.date.strftime("%Y-%m-%d")
+        daily_spending[day_str] += expense.amount
+
+    sorted_dates = sorted(daily_spending.keys())
+    amounts = [daily_spending[date] for date in sorted_dates]
+
+    total_spent = sum(expense.amount for expense in pagination.items)
     budget = 1000
     remaining_budget = budget - total_spent
+
     return render_template('home.html',
                            expenses=pagination.items,
                            pagination=pagination,
                            total_spent=total_spent,
-                           remaining_budget=remaining_budget)
+                           remaining_budget=remaining_budget,
+                           chart_labels=sorted_dates,
+                           chart_data=amounts)
 
 @app.route('/add_expense', methods=['POST'])
 @login_required
