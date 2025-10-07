@@ -6,6 +6,8 @@ import os
 from io import StringIO
 import csv
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///journal.db'
@@ -65,12 +67,14 @@ def register():
         if User.query.filter_by(username=username).first():
             flash('Username already exists')
             return redirect(url_for('register'))
-        new_user = User(username=username, password=password)
+        hashed_pw = generate_password_hash(password)
+        new_user = User(username=username, password=hashed_pw)
         db.session.add(new_user)
         db.session.commit()
         flash('Registration successful! You can now log in.')
         return redirect(url_for('login'))
     return render_template('register.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -78,8 +82,8 @@ def login():
         session.pop('_flashes', None)
         username = request.form['username']
         password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
-        if user:
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
             login_user(user)
             flash('Logged in successfully!')
             return redirect(url_for('home'))
@@ -87,6 +91,7 @@ def login():
             flash('Wrong username or password!')
             return redirect(url_for('login'))
     return render_template('login.html')
+
 
 @app.route('/logout')
 @login_required
@@ -242,14 +247,15 @@ def change_password():
     if request.method == 'POST':
         old_password = request.form['old_password']
         new_password = request.form['new_password']
-        if old_password != current_user.password:
+        if not check_password_hash(current_user.password, old_password):
             flash('Old password is incorrect.')
             return redirect(url_for('change_password'))
-        current_user.password = new_password
+        current_user.password = generate_password_hash(new_password)
         db.session.commit()
         flash('Password updated successfully!')
         return redirect(url_for('profile'))
     return render_template('change_password.html')
+
 
 @app.route('/upload_avatar', methods=['GET', 'POST'])
 @login_required
