@@ -62,7 +62,7 @@
 
       const chartLabels = {{ chart_labels | tojson | safe }};
       const chartData = {{ chart_data | tojson | safe }};
-
+      
       new Chart(ctx, {
         type: 'line',
         data: {
