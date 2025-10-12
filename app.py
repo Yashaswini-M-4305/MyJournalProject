@@ -157,15 +157,22 @@ def login():
         session.pop('_flashes', None)
         username = request.form['username'].strip()
         password = request.form['password']
+        app.logger.info(f"Login attempt username: {username}")
         user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash('Logged in successfully!')
-            return redirect(url_for('home'))
+        if user:
+            app.logger.info(f"User found: {user.username}")
+            password_matches = check_password_hash(user.password, password)
+            app.logger.info(f"Password match: {password_matches}")
+            if password_matches:
+                login_user(user)
+                flash('Logged in successfully!')
+                return redirect(url_for('home'))
         else:
-            flash('Wrong username or password!')
-            return redirect(url_for('login'))
+            app.logger.info("User not found")
+        flash('Wrong username or password!')
+        return redirect(url_for('login'))
     return render_template('login.html')
+
 
 @app.route('/logout')
 @login_required
