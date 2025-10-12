@@ -13,11 +13,9 @@ from itsdangerous import URLSafeTimedSerializer
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'journal.db')
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
 
-# Optional: For more verbose error logs in hosting
 import logging
 logging.basicConfig(level=logging.INFO)
 app.logger.setLevel(logging.DEBUG)
@@ -136,8 +134,8 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
+        username = request.form['username'].strip()
+        email = request.form['email'].strip()
         password = request.form['password']
         if User.query.filter_by(username=username).first():
             flash('Username already exists')
@@ -157,24 +155,16 @@ def register():
 def login():
     if request.method == 'POST':
         session.pop('_flashes', None)
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if user:
-            if user.password.startswith('pbkdf2:'):
-                if check_password_hash(user.password, password):
-                    login_user(user)
-                    flash('Logged in successfully!')
-                    return redirect(url_for('home'))
-            else:
-                if user.password == password:
-                    user.password = generate_password_hash(password)
-                    db.session.commit()
-                    login_user(user)
-                    flash('Logged in successfully!')
-                    return redirect(url_for('home'))
-        flash('Wrong username or password!')
-        return redirect(url_for('login'))
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            flash('Logged in successfully!')
+            return redirect(url_for('home'))
+        else:
+            flash('Wrong username or password!')
+            return redirect(url_for('login'))
     return render_template('login.html')
 
 @app.route('/logout')
@@ -188,7 +178,7 @@ def logout():
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form['email'].strip()
         user = User.query.filter_by(email=email).first()
         if user:
             token = generate_reset_token(user.email, app.config['SECRET_KEY'])
@@ -216,9 +206,9 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
-# (Continue with any other routes you need...)
+# Add any other routes you require below
 
-# THIS LINE CREATES THE DB TABLES ON HOSTING (REQUIRED for Render)
+# DB tables creation necessary for Render server to work correctly
 with app.app_context():
     db.create_all()
 
