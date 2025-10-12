@@ -87,3 +87,6 @@ nav a {
     margin-right: 15px;
     font-weight: 600;
 }
+.inline-form {
+    display: inline;
+}

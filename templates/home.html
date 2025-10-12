@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - Expense Journal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
@@ -27,8 +29,9 @@
       <ul>
         {% for expense in expenses %}
           <li>
-            {{ expense.date.strftime('%Y-%m-%d') }} - {{ expense.description }}: ${{ '%.2f'|format(expense.amount) }}
-            <form action="{{ url_for('delete_expense', id=expense.id) }}" method="post" style="display:inline;">
+            {{ expense.date.strftime('%Y-%m-%d') }} -
+            {{ expense.description }}: ${{ '%.2f'|format(expense.amount) }}
+            <form class="inline-form" action="{{ url_for('delete_expense', id=expense.id) }}" method="post">
                 <button type="submit" onclick="return confirm('Delete this expense?')">Delete</button>
             </form>
           </li>
@@ -59,10 +62,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
       const ctx = document.getElementById('spendingChart').getContext('2d');
-
+      // Flask will render these with valid JS arrays
       const chartLabels = {{ chart_labels | tojson | safe }};
       const chartData = {{ chart_data | tojson | safe }};
-      
       new Chart(ctx, {
         type: 'line',
         data: {
