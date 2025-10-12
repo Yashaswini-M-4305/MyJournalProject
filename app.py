@@ -16,6 +16,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///journal.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
 
+# Optional: For more verbose error logs in hosting
+import logging
+logging.basicConfig(level=logging.INFO)
+app.logger.setLevel(logging.DEBUG)
+
 # Flask-Mail setup
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -81,7 +86,52 @@ class WatchedShow(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Registration
+@app.route('/')
+@login_required
+def home():
+    page = request.args.get('page', 1, type=int)
+    per_page = 5
+    today = datetime.date.today()
+    first_day = datetime.date(today.year, today.month, 1)
+    if today.month == 12:
+        next_month_first_day = datetime.date(today.year + 1, 1, 1)
+    else:
+        next_month_first_day = datetime.date(today.year, today.month + 1, 1)
+    pagination = Expense.query.filter(
+        Expense.user_id == current_user.id,
+        Expense.date >= first_day,
+        Expense.date < next_month_first_day
+    ).paginate(page=page, per_page=per_page)
+
+    daily_spending = defaultdict(float)
+    expenses_for_chart = Expense.query.filter(
+        Expense.user_id == current_user.id,
+        Expense.date >= first_day,
+        Expense.date < next_month_first_day
+    ).all()
+    for expense in expenses_for_chart:
+        day_str = expense.date.strftime("%Y-%m-%d")
+        daily_spending[day_str] += expense.amount
+
+    sorted_dates = sorted(daily_spending.keys())
+    amounts = [daily_spending[date] for date in sorted_dates]
+
+    chart_labels = sorted_dates if sorted_dates else []
+    chart_data = amounts if amounts else []
+    total_spent = sum(expense.amount for expense in pagination.items)
+    budget = 1000
+    remaining_budget = budget - total_spent
+
+    return render_template(
+        'home.html',
+        expenses=pagination.items,
+        pagination=pagination,
+        total_spent=total_spent,
+        remaining_budget=remaining_budget,
+        chart_labels=chart_labels,
+        chart_data=chart_data
+    )
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -102,7 +152,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -135,7 +184,6 @@ def logout():
     flash('Logged out!')
     return redirect(url_for('login'))
 
-# Forgot password
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -152,7 +200,6 @@ def forgot_password():
             flash('No user found with that email.')
     return render_template('forgot_password.html')
 
-# Reset password
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     email = verify_reset_token(token, app.config['SECRET_KEY'])
@@ -168,9 +215,11 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
-# ... (rest of your existing routes like home, add_expense, etc.) ...
+# (Continue with any other routes you need...)
+
+# THIS LINE CREATES THE DB TABLES ON HOSTING (REQUIRED for Render)
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
