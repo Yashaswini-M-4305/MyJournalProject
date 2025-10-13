@@ -138,12 +138,13 @@ def home():
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    return render_template('profile.html', user=current_user)
+
 
 @app.route('/experiences')
 @login_required
 def experiences():
-    return render_template('experiences.html')
+    return render_template('experiences.html', user=current_user)
 
 
 @app.route('/add_expense', methods=['POST'])
