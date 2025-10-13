@@ -321,6 +321,7 @@ def reset_password(token):
 
 
 
+
 # DB tables creation necessary for Render server to work correctly
 with app.app_context():
     db.create_all()
