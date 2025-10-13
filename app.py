@@ -170,6 +170,73 @@ def delete_expense(id):
     flash('Expense deleted!')
     return redirect(url_for('home'))
 
+@app.route('/add_visited_place', methods=['POST'])
+@login_required
+def add_visited_place():
+    name = request.form['name']
+    new_place = VisitedPlace(name=name, user_id=current_user.id)
+    db.session.add(new_place)
+    db.session.commit()
+    flash('Visited place added!')
+    return redirect(url_for('experiences'))
+
+@app.route('/delete_visited_place/<int:id>', methods=['POST'])
+@login_required 
+def delete_visited_place(id):
+    place = VisitedPlace.query.get_or_404(id)
+    if place.user_id != current_user.id:
+        flash('Unauthorized attempt to delete place!')
+        return redirect(url_for('experiences'))
+    db.session.delete(place)
+    db.session.commit()
+    flash('Visited place deleted!')
+    return redirect(url_for('experiences'))
+
+@app.route('/add_food_tried', methods=['POST'])
+@login_required 
+def add_food_tried():
+    name = request.form['name']
+    new_food = FoodTried(name=name, user_id=current_user.id)
+    db.session.add(new_food)
+    db.session.commit()
+    flash('Food tried added!')
+    return redirect(url_for('experiences'))
+
+@app.route('/delete_food_tried/<int:id>', methods=['POST'])
+@login_required
+def delete_food_tried(id):
+    food = FoodTried.query.get_or_404(id)
+    if food.user_id != current_user.id:
+        flash('Unauthorized attempt to delete food!')
+        return redirect(url_for('experiences'))
+    db.session.delete(food)
+    db.session.commit()
+    flash('Food tried deleted!')
+    return redirect(url_for('experiences'))
+
+@app.route('/add_watched_show', methods=['POST'])
+@login_required
+def add_watched_show():
+    name = request.form['name']
+    new_show = WatchedShow(name=name, user_id=current_user.id)
+    db.session.add(new_show)
+    db.session.commit()
+    flash('Watched show added!')
+    return redirect(url_for('experiences'))
+
+@app.route('/delete_watched_show/<int:id>', methods=['POST'])
+@login_required
+def delete_watched_show(id):
+    show = WatchedShow.query.get_or_404(id)
+    if show.user_id != current_user.id:
+        flash('Unauthorized attempt to delete show!')
+        return redirect(url_for('experiences'))
+    db.session.delete(show)
+    db.session.commit()
+    flash('Watched show deleted!')
+    return redirect(url_for('experiences'))
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
