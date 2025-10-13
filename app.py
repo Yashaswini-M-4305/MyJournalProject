@@ -133,6 +133,40 @@ def home():
         chart_data=chart_data
     )
 
+@app.route('/experiences')
+@login_required
+def experiences():
+    return render_template('experiences.html')
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+@app.route('/add_expense', methods=['POST'])
+@login_required
+def add_expense():
+    description = request.form['description']
+    amount = float(request.form['amount'])
+    date = datetime.datetime.strptime(request.form['date'], '%Y-%m-%d').date()
+    new_expense = Expense(description=description, amount=amount, date=date, user_id=current_user.id)
+    db.session.add(new_expense)
+    db.session.commit()
+    flash('Expense added successfully!')
+    return redirect(url_for('home'))
+
+@app.route('/delete_expense/<int:id>', methods=['POST'])
+@login_required
+def delete_expense(id):
+    expense = Expense.query.get_or_404(id)
+    if expense.user_id != current_user.id:
+        flash('Unauthorized attempt to delete expense!')
+        return redirect(url_for('home'))
+    db.session.delete(expense)
+    db.session.commit()
+    flash('Expense deleted!')
+    return redirect(url_for('home'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -175,7 +209,6 @@ def login():
         return redirect(url_for('login'))
     return render_template('login.html')
 
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -215,20 +248,8 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
-@app.route('/add_expense', methods=['POST'])
-@login_required
-def add_expense():
-    description = request.form['description']
-    amount = float(request.form['amount'])
-    date = datetime.datetime.strptime(request.form['date'], '%Y-%m-%d').date()
-    new_expense = Expense(description=description, amount=amount, date=date, user_id=current_user.id)
-    db.session.add(new_expense)
-    db.session.commit()
-    flash('Expense added successfully!')
-    return redirect(url_for('home'))
 
 
-# Add any other routes you require below
 
 # DB tables creation necessary for Render server to work correctly
 with app.app_context():
