@@ -253,6 +253,42 @@ def add_watched_show():
     db.session.commit()
     flash('Show added!')
     return redirect(url_for('experiences'))
+@app.route('/delete_visited_place/<int:id>', methods=['POST'])
+@login_required
+def delete_visited_place(id):
+    place = VisitedPlace.query.get_or_404(id)
+    if place.user_id != current_user.id:
+        flash('Unauthorized action!')
+        return redirect(url_for('experiences'))
+    db.session.delete(place)
+    db.session.commit()
+    flash('Visited place deleted!')
+    return redirect(url_for('experiences'))
+
+@app.route('/delete_food_tried/<int:id>', methods=['POST'])
+@login_required
+def delete_food_tried(id):
+    food = FoodTried.query.get_or_404(id)
+    if food.user_id != current_user.id:
+        flash('Unauthorized action!')
+        return redirect(url_for('experiences'))
+    db.session.delete(food)
+    db.session.commit()
+    flash('Food deleted!')
+    return redirect(url_for('experiences'))
+
+@app.route('/delete_watched_show/<int:id>', methods=['POST'])
+@login_required
+def delete_watched_show(id):
+    show = WatchedShow.query.get_or_404(id)
+    if show.user_id != current_user.id:
+        flash('Unauthorized action!')
+        return redirect(url_for('experiences'))
+    db.session.delete(show)
+    db.session.commit()
+    flash('Show deleted!')
+    return redirect(url_for('experiences'))
+
 
 def generate_reset_token(email, secret_key, expiration=3600):
     s = URLSafeTimedSerializer(secret_key)
