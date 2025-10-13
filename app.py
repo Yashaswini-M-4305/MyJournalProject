@@ -143,6 +143,17 @@ def experiences():
 def profile():
     return render_template('profile.html')
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+@app.route('/experiences')
+@login_required
+def experiences():
+    return render_template('experiences.html')
+
+
 @app.route('/add_expense', methods=['POST'])
 @login_required
 def add_expense():
