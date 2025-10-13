@@ -140,6 +140,10 @@ def home():
 def profile():
     return render_template('profile.html', user=current_user)
 
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    return render_template('change_password.html')
 
 @app.route('/experiences')
 @login_required

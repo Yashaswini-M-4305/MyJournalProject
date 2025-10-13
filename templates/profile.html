@@ -1,19 +1,2 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Profile</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <h1>Profile</h1>
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <ul>
-        <li><a href="{{ url_for('home') }}">Expenses</a></li>
-        <li><a href="{{ url_for('experiences') }}">Experiences</a></li>
-        <li><a href="{{ url_for('logout') }}">Log out</a></li>
-    </ul>
-    <p><a href="{{ url_for('change_password') }}">Change Password</a></p>
-<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
-</body>
-</html>
+<h1>Profile works</h1>
+<p>{{ user.username }}</p>
