@@ -215,6 +215,19 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
+@app.route('/add_expense', methods=['POST'])
+@login_required
+def add_expense():
+    description = request.form['description']
+    amount = float(request.form['amount'])
+    date = datetime.datetime.strptime(request.form['date'], '%Y-%m-%d').date()
+    new_expense = Expense(description=description, amount=amount, date=date, user_id=current_user.id)
+    db.session.add(new_expense)
+    db.session.commit()
+    flash('Expense added successfully!')
+    return redirect(url_for('home'))
+
+
 # Add any other routes you require below
 
 # DB tables creation necessary for Render server to work correctly
