@@ -1,12 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 import os
-from io import StringIO
-import csv
-from werkzeug.utils import secure_filename
 from collections import defaultdict
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
@@ -17,12 +14,6 @@ app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'journal.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key'
-
-import logging
-logging.basicConfig(level=logging.INFO)
-app.logger.setLevel(logging.DEBUG)
-
-# Flask-Mail setup
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -30,30 +21,10 @@ app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
 app.config['MAIL_PASSWORD'] = 'your_gmail_app_password'
 mail = Mail(app)
 
-UPLOAD_FOLDER = os.path.join('static', 'avatars')
-ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXT
-
-def generate_reset_token(email, secret_key, expiration=3600):
-    s = URLSafeTimedSerializer(secret_key)
-    return s.dumps(email, salt='password-reset-salt')
-
-def verify_reset_token(token, secret_key, expiration=3600):
-    s = URLSafeTimedSerializer(secret_key)
-    try:
-        email = s.loads(token, salt='password-reset-salt', max_age=expiration)
-    except Exception:
-        return None
-    return email
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -94,10 +65,7 @@ def home():
     per_page = 5
     today = datetime.date.today()
     first_day = datetime.date(today.year, today.month, 1)
-    if today.month == 12:
-        next_month_first_day = datetime.date(today.year + 1, 1, 1)
-    else:
-        next_month_first_day = datetime.date(today.year, today.month + 1, 1)
+    next_month_first_day = datetime.date(today.year + 1, 1, 1) if today.month == 12 else datetime.date(today.year, today.month + 1, 1)
     pagination = Expense.query.filter(
         Expense.user_id == current_user.id,
         Expense.date >= first_day,
@@ -114,11 +82,8 @@ def home():
         day_str = expense.date.strftime("%Y-%m-%d")
         daily_spending[day_str] += expense.amount
 
-    sorted_dates = sorted(daily_spending.keys())
-    amounts = [daily_spending[date] for date in sorted_dates]
-
-    chart_labels = sorted_dates if sorted_dates else []
-    chart_data = amounts if amounts else []
+    chart_labels = sorted(daily_spending.keys())
+    chart_data = [daily_spending[date] for date in chart_labels]
     total_spent = sum(expense.amount for expense in pagination.items)
     budget = 1000
     remaining_budget = budget - total_spent
@@ -132,24 +97,6 @@ def home():
         chart_labels=chart_labels,
         chart_data=chart_data
     )
-
-
-
-@app.route('/profile')
-@login_required
-def profile():
-    return render_template('profile.html', user=current_user)
-
-@app.route('/change_password', methods=['GET', 'POST'])
-@login_required
-def change_password():
-    return render_template('change_password.html')
-
-@app.route('/experiences')
-@login_required
-def experiences():
-    return render_template('experiences.html')
-
 
 @app.route('/add_expense', methods=['POST'])
 @login_required
@@ -174,73 +121,6 @@ def delete_expense(id):
     db.session.commit()
     flash('Expense deleted!')
     return redirect(url_for('home'))
-
-@app.route('/add_visited_place', methods=['POST'])
-@login_required
-def add_visited_place():
-    name = request.form['name']
-    new_place = VisitedPlace(name=name, user_id=current_user.id)
-    db.session.add(new_place)
-    db.session.commit()
-    flash('Visited place added!')
-    return redirect(url_for('experiences'))
-
-@app.route('/delete_visited_place/<int:id>', methods=['POST'])
-@login_required 
-def delete_visited_place(id):
-    place = VisitedPlace.query.get_or_404(id)
-    if place.user_id != current_user.id:
-        flash('Unauthorized attempt to delete place!')
-        return redirect(url_for('experiences'))
-    db.session.delete(place)
-    db.session.commit()
-    flash('Visited place deleted!')
-    return redirect(url_for('experiences'))
-
-@app.route('/add_food_tried', methods=['POST'])
-@login_required 
-def add_food_tried():
-    name = request.form['name']
-    new_food = FoodTried(name=name, user_id=current_user.id)
-    db.session.add(new_food)
-    db.session.commit()
-    flash('Food tried added!')
-    return redirect(url_for('experiences'))
-
-@app.route('/delete_food_tried/<int:id>', methods=['POST'])
-@login_required
-def delete_food_tried(id):
-    food = FoodTried.query.get_or_404(id)
-    if food.user_id != current_user.id:
-        flash('Unauthorized attempt to delete food!')
-        return redirect(url_for('experiences'))
-    db.session.delete(food)
-    db.session.commit()
-    flash('Food tried deleted!')
-    return redirect(url_for('experiences'))
-
-@app.route('/add_watched_show', methods=['POST'])
-@login_required
-def add_watched_show():
-    name = request.form['name']
-    new_show = WatchedShow(name=name, user_id=current_user.id)
-    db.session.add(new_show)
-    db.session.commit()
-    flash('Watched show added!')
-    return redirect(url_for('experiences'))
-
-@app.route('/delete_watched_show/<int:id>', methods=['POST'])
-@login_required
-def delete_watched_show(id):
-    show = WatchedShow.query.get_or_404(id)
-    if show.user_id != current_user.id:
-        flash('Unauthorized attempt to delete show!')
-        return redirect(url_for('experiences'))
-    db.session.delete(show)
-    db.session.commit()
-    flash('Watched show deleted!')
-    return redirect(url_for('experiences'))
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -268,18 +148,11 @@ def login():
         session.pop('_flashes', None)
         username = request.form['username'].strip()
         password = request.form['password']
-        app.logger.info(f"Login attempt username: {username}")
         user = User.query.filter_by(username=username).first()
-        if user:
-            app.logger.info(f"User found: {user.username}")
-            password_matches = check_password_hash(user.password, password)
-            app.logger.info(f"Password match: {password_matches}")
-            if password_matches:
-                login_user(user)
-                flash('Logged in successfully!')
-                return redirect(url_for('home'))
-        else:
-            app.logger.info("User not found")
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            flash('Logged in successfully!')
+            return redirect(url_for('home'))
         flash('Wrong username or password!')
         return redirect(url_for('login'))
     return render_template('login.html')
@@ -323,11 +196,76 @@ def reset_password(token):
         return redirect(url_for('login'))
     return render_template('reset_password.html')
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
 
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        old_password = request.form['old_password']
+        new_password = request.form['new_password']
+        if not check_password_hash(current_user.password, old_password):
+            flash('Old password is incorrect.')
+            return redirect(url_for('change_password'))
+        current_user.password = generate_password_hash(new_password)
+        db.session.commit()
+        flash('Password changed successfully!')
+        return redirect(url_for('profile'))
+    return render_template('change_password.html')
 
+@app.route('/experiences')
+@login_required
+def experiences():
+    places = VisitedPlace.query.filter_by(user_id=current_user.id).all()
+    foods = FoodTried.query.filter_by(user_id=current_user.id).all()
+    shows = WatchedShow.query.filter_by(user_id=current_user.id).all()
+    return render_template('experiences.html', places=places, foods=foods, shows=shows)
 
+@app.route('/add_visited_place', methods=['POST'])
+@login_required
+def add_visited_place():
+    name = request.form['name']
+    new_place = VisitedPlace(name=name, user_id=current_user.id)
+    db.session.add(new_place)
+    db.session.commit()
+    flash('Visited place added!')
+    return redirect(url_for('experiences'))
 
-# DB tables creation necessary for Render server to work correctly
+@app.route('/add_food_tried', methods=['POST'])
+@login_required
+def add_food_tried():
+    name = request.form['name']
+    new_food = FoodTried(name=name, user_id=current_user.id)
+    db.session.add(new_food)
+    db.session.commit()
+    flash('Food added!')
+    return redirect(url_for('experiences'))
+
+@app.route('/add_watched_show', methods=['POST'])
+@login_required
+def add_watched_show():
+    name = request.form['name']
+    new_show = WatchedShow(name=name, user_id=current_user.id)
+    db.session.add(new_show)
+    db.session.commit()
+    flash('Show added!')
+    return redirect(url_for('experiences'))
+
+def generate_reset_token(email, secret_key, expiration=3600):
+    s = URLSafeTimedSerializer(secret_key)
+    return s.dumps(email, salt='password-reset-salt')
+
+def verify_reset_token(token, secret_key, expiration=3600):
+    s = URLSafeTimedSerializer(secret_key)
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=expiration)
+    except Exception:
+        return None
+    return email
+
 with app.app_context():
     db.create_all()
 
