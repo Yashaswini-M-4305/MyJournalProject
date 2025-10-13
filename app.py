@@ -144,7 +144,7 @@ def profile():
 @app.route('/experiences')
 @login_required
 def experiences():
-    return render_template('experiences.html', user=current_user)
+    return render_template('experiences.html')
 
 
 @app.route('/add_expense', methods=['POST'])
