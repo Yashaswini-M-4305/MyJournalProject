@@ -1,1 +1,1 @@
-# Online Journal kind of website
+# Personal Expense and Experience Tracker Web Application
